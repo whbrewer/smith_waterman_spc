@@ -1,29 +1,43 @@
 #!/Users/Rad/anaconda/bin/python
 # (c) 2013 Ryan Boehning
-
+# https://gist.github.com/radaniba/11019717
 
 '''A Python implementation of the Smith-Waterman algorithm for local alignment
 of nucleotide sequences.
 '''
-
 
 import argparse
 import os
 import re
 import sys
 import unittest
-
+import ConfigParser
 
 # These scores are taken from Wikipedia.
 # en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm
-match    = 2
-mismatch = -1
-gap      = -1
-seq1     = None
-seq2     = None
+# match    = 2
+# mismatch = -1
+# gap      = -1
+# seq1 = "ATAGACGACATACAGACAGCATACAGACAGCATACAGA"
+# seq2 = "TTTAGCATGCGCATATCAGCAATACAGACAGATACG"
 
+# read parameters from input file
+params = dict()
+config = ConfigParser.ConfigParser()
+config.read('smith_waterman.ini')
+for section in config.sections():
+    for option in config.options(section):
+        params[option] = config.get(section, option)
+
+# parse out parameters from params dictionary
+seq1 = params['seq1']
+seq2 = params['seq2']
+match = int(params['match'])
+mismatch = int(params['mismatch'])
+gap = int(params['indel'])
 
 def main():
+
     try:
         parse_cmd_line()
     except ValueError as err:
@@ -47,17 +61,25 @@ def main():
     # as closely as possible.
     alignment_str, idents, gaps, mismatches = alignment_string(seq1_aligned, seq2_aligned)
     alength = len(seq1_aligned)
-    print()
-    print(' Identities = {0}/{1} ({2:.1%}), Gaps = {3}/{4} ({5:.1%})'.format(idents,
-          alength, idents / alength, gaps, alength, gaps / alength))
-    print()
+
+    print_matrix(score_matrix)
+
+    print('Input parameters:')
+    print('match: ' + str(match))
+    print('mismatch: ' + str(mismatch))
+    print('indel: ' + str(gap))
+
+    print('\nIdentities = {0}/{1} ({2:.1%}), Gaps = {3}/{4} ({5:.1%})\n'.format(idents,
+          alength, float(idents) / alength, gaps, alength, float(gaps) / alength))
+
     for i in range(0, alength, 60):
         seq1_slice = seq1_aligned[i:i+60]
         print('Query  {0:<4}  {1}  {2:<4}'.format(i + 1, seq1_slice, i + len(seq1_slice)))
         print('             {0}'.format(alignment_str[i:i+60]))
         seq2_slice = seq2_aligned[i:i+60]
         print('Sbjct  {0:<4}  {1}  {2:<4}'.format(i + 1, seq2_slice, i + len(seq2_slice)))
-        print()
+        print('')
+
 
 
 def parse_cmd_line():
@@ -153,7 +175,7 @@ def traceback(score_matrix, start_pos):
         move = next_move(score_matrix, x, y)
 
     aligned_seq1.append(seq1[x - 1])
-    aligned_seq2.append(seq1[y - 1])
+    aligned_seq2.append(seq2[y - 1])
 
     return ''.join(reversed(aligned_seq1)), ''.join(reversed(aligned_seq2))
 
@@ -214,10 +236,16 @@ def print_matrix(matrix):
     0   2   2   5   4   5
     0   1   4   4   7   6
     '''
-    for row in matrix:
-        for col in row:
-            print('{0:>4}'.format(col))
-        print()
+    # print matrix
+    s = [[str(e) for e in row] for row in matrix]
+    lens = [max(map(len, col)) for col in zip(*s)]
+    fmt = '\t'.join('{{:{}}}'.format(x) for x in lens)
+    table = [fmt.format(*row) for row in s]
+    print '\n'.join(table)
+    # for row in matrix:
+    #     for col in row:
+    #         print('{0:>4}'.format(col))
+    #     print('')
 
 
 class ScoreMatrixTest(unittest.TestCase):

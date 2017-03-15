@@ -1,0 +1,12 @@
+{
+   "category": "", 
+   "name": "smith_waterman", 
+   "input_format": "ini", 
+   "language": "", 
+   "command": "python ../../../../apps/seq_align/seq_align.py", 
+   "postprocess": "", 
+   "preprocess": "", 
+   "plots": [], 
+   "assets": [], 
+   "description": "Smith-Waterman sequence alignment algorithm"
+}
